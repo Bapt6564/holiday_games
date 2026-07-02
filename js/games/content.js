@@ -306,28 +306,65 @@ function gameBlindTest(back) {
   // On coupe le son si on quitte le jeu
   const leave = () => { stopAudio(); back(); };
 
-  /* Cherche l'extrait 30 s d'un morceau sur Deezer (JSONP).
-     Renvoie l'URL de l'extrait, ou null si introuvable. */
-  function findPreview(t) {
+  /* ---- Recherche d'extrait : outils ----
+     jsonp(url) : charge une URL d'API via une balise <script> et récupère
+     la réponse par une fonction de rappel (contourne les blocages fetch). */
+  function jsonp(url) {
     return new Promise((resolve) => {
-      const key = t.title + "|" + t.artist;
-      if (key in previewCache) return resolve(previewCache[key]);
-      const cbName = "dz_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+      const cbName = "cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
       const script = document.createElement("script");
-      const timer = setTimeout(() => { cleanup(); resolve(null); }, 8000); // 8 s max
+      const timer = setTimeout(() => { cleanup(); resolve(null); }, 7000);
       function cleanup() { delete window[cbName]; script.remove(); clearTimeout(timer); }
-      window[cbName] = (data) => {
-        cleanup();
-        const hit = data && data.data && data.data[0];
-        previewCache[key] = hit && hit.preview ? hit.preview : null;
-        resolve(previewCache[key]);
-      };
+      window[cbName] = (data) => { cleanup(); resolve(data); };
       script.onerror = () => { cleanup(); resolve(null); };
-      script.src = "https://api.deezer.com/search?q=" +
-        encodeURIComponent(t.title + " " + t.artist) +
-        "&output=jsonp&callback=" + cbName;
+      script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cbName;
       document.body.appendChild(script);
     });
+  }
+
+  /* Nettoie un titre/artiste pour la recherche : enlève les parenthèses
+     "(Remastered 2011)", les crochets, les "feat. ..." qui font rater. */
+  function cleanStr(s) {
+    return (s || "")
+      .replace(/\(.*?\)|\[.*?\]/g, " ")
+      .replace(/\b(feat\.?|ft\.?|featuring)\b.*/i, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  async function deezerSearch(query) {
+    const data = await jsonp("https://api.deezer.com/search?output=jsonp&q=" + encodeURIComponent(query));
+    const hit = data && data.data && data.data[0];
+    return hit && hit.preview ? hit.preview : null;
+  }
+  async function itunesSearch(query) {
+    const data = await jsonp("https://itunes.apple.com/search?media=music&entity=song&limit=1&term=" + encodeURIComponent(query));
+    const hit = data && data.results && data.results[0];
+    return hit && hit.previewUrl ? hit.previewUrl : null;
+  }
+
+  /* Cherche l'extrait 30 s d'un morceau : plusieurs tentatives, de la
+     plus précise à la plus large, sur Deezer puis iTunes. */
+  async function findPreview(t) {
+    const key = t.title + "|" + t.artist;
+    if (key in previewCache) return previewCache[key];
+    const title = cleanStr(t.title), artist = cleanStr(t.artist);
+    const attempts = [
+      // 1. Recherche précise Deezer (champ par champ)
+      artist ? () => deezerSearch('artist:"' + artist + '" track:"' + title + '"') : null,
+      // 2. Recherche libre Deezer "titre artiste"
+      () => deezerSearch(title + " " + artist),
+      // 3. Titre seul (utile si l'orthographe de l'artiste diffère)
+      () => deezerSearch(title),
+      // 4. Filet de sécurité : catalogue iTunes
+      () => itunesSearch(title + " " + artist),
+    ].filter(Boolean);
+    for (const attempt of attempts) {
+      const url = await attempt();
+      if (url) { previewCache[key] = url; return url; }
+    }
+    previewCache[key] = null;
+    return null;
   }
 
   async function playPreview(t, buttonEl) {
@@ -346,12 +383,14 @@ function gameBlindTest(back) {
     draw();
   }
 
-  // Chaque ligne = "Titre - Artiste" et éventuellement " | lien"
+  // Chaque ligne = "Titre - Artiste" et éventuellement " | lien".
+  // On accepte aussi les tirets longs – et — (souvent générés par l'IA).
   function parse(text) {
     return text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((line) => {
       const [main, link] = line.split("|").map((s) => s.trim());
-      const [title, artist] = main.split(" - ").map((s) => s.trim());
-      return { title: title || main, artist: artist || "", link: link || "" };
+      const parts = main.split(/\s+[-–—]\s+/); // tiret simple, demi-cadratin, cadratin
+      const title = parts[0], artist = parts.slice(1).join(" ");
+      return { title: (title || main).trim(), artist: (artist || "").trim(), link: link || "" };
     });
   }
 
