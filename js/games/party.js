@@ -110,6 +110,18 @@ function gameTimesUp(back) {
     box.append(
       el("div", { class: "label" }, "Vos mots (un par ligne) 💾 sauvegardés"),
       wordsArea, countLabel,
+      // Génération par IA : un thème ou plusieurs séparés par des virgules.
+      // Les mots générés s'AJOUTENT à la liste (ils ne l'écrasent pas).
+      el("div", { class: "mt-2" }, aiButton("✨ Générer des mots par IA", async () => {
+        const theme = prompt("Thème(s) ? Sépare par des virgules pour mélanger.\nEx : cinéma, années 2000, cuisine, physique") || "";
+        const data = await aiGenerate('Génère 30 mots ou noms pour un jeu Time\'s Up entre amis français' + (theme ? ' sur ce(s) thème(s) : "' + theme + '" (mélange équitablement les thèmes)' : ' (mélange célébrités, objets, films, concepts)') + '. Ils doivent être connus de tous, faciles à mimer ou décrire, variés en difficulté. Réponds UNIQUEMENT par un tableau JSON de chaînes : ["Mot 1","Mot 2"]');
+        if (!data || !Array.isArray(data)) return;
+        // Ajout sans doublons avec les mots déjà saisis
+        const existing = new Set(parseWords().map((w) => w.toLowerCase()));
+        const fresh = data.filter((w) => !existing.has(String(w).toLowerCase()));
+        wordsText = (wordsText.trim() ? wordsText.trim() + "\n" : "") + fresh.join("\n");
+        persist(); draw();
+      })),
       el("div", { class: "label mt-4" }, "Équipes"), teamsBox,
       el("div", { class: "mt-4" }, timeLabel), slider,
       el("div", { class: "mt-4" }, btn("🚀 C'est parti !", startGame, parseWords().length >= 5 ? "go" : "disabled"))
