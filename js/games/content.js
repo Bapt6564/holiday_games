@@ -277,19 +277,74 @@ function gamePhoto(back) {
   draw();
 }
 
-/* --------------------------- 🎧 BLIND TEST -------------------------- */
-/* Rappel : on ne peut pas jouer Spotify DANS l'app (ça demande une
-   connexion officielle + Premium + un site déclaré). Ici l'app gère la
-   liste, les révélations et les points ; le SON se lance depuis ton
-   appli Spotify/YouTube (au haut-parleur). Colle un lien après un « | »
-   pour obtenir un bouton ▶ qui ouvre le morceau directement.          */
+/* --------------------------- 🎧 BLIND TEST --------------------------
+   LECTURE AUDIO SANS SPOIL : l'app interroge l'API publique de Deezer
+   (gratuite, sans clé ni compte) qui fournit un EXTRAIT DE 30 s par
+   morceau. L'extrait se joue directement dans l'app : personne ne voit
+   le titre, même pas celui qui tient le téléphone !
+   - Nécessite internet pendant la partie (recherche + streaming).
+   - Si un morceau est introuvable chez Deezer : boutons de secours
+     Spotify/YouTube (réservés au DJ, car la recherche affiche le titre).
+   - Technique : Deezer n'accepte pas fetch() depuis un autre site, on
+     passe donc par "JSONP" (une balise <script> qui appelle une
+     fonction de rappel — vieux truc du web, toujours efficace).      */
 function gameBlindTest(back) {
   let phase = "setup";                       // setup | playing
   let tracksText = load("blindtest-text", "");
   let tracks = [], order = [], idx = 0, revealed = false;
+  let audio = null;                          // le lecteur audio en cours
+  let playing = false;
+  const previewCache = {};                   // mémorise les extraits trouvés
 
   const box = el("div");
   mount(box);
+
+  function stopAudio() {
+    if (audio) { audio.pause(); audio = null; }
+    playing = false;
+  }
+  // On coupe le son si on quitte le jeu
+  const leave = () => { stopAudio(); back(); };
+
+  /* Cherche l'extrait 30 s d'un morceau sur Deezer (JSONP).
+     Renvoie l'URL de l'extrait, ou null si introuvable. */
+  function findPreview(t) {
+    return new Promise((resolve) => {
+      const key = t.title + "|" + t.artist;
+      if (key in previewCache) return resolve(previewCache[key]);
+      const cbName = "dz_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+      const script = document.createElement("script");
+      const timer = setTimeout(() => { cleanup(); resolve(null); }, 8000); // 8 s max
+      function cleanup() { delete window[cbName]; script.remove(); clearTimeout(timer); }
+      window[cbName] = (data) => {
+        cleanup();
+        const hit = data && data.data && data.data[0];
+        previewCache[key] = hit && hit.preview ? hit.preview : null;
+        resolve(previewCache[key]);
+      };
+      script.onerror = () => { cleanup(); resolve(null); };
+      script.src = "https://api.deezer.com/search?q=" +
+        encodeURIComponent(t.title + " " + t.artist) +
+        "&output=jsonp&callback=" + cbName;
+      document.body.appendChild(script);
+    });
+  }
+
+  async function playPreview(t, buttonEl) {
+    buttonEl.textContent = "⏳ Recherche...";
+    const url = await findPreview(t);
+    if (!url) {
+      buttonEl.textContent = "▶ Jouer l'extrait (30 s)";
+      alert("Extrait introuvable pour ce morceau 😕 Utilise les boutons de secours (DJ uniquement), ou vérifie l'orthographe Titre - Artiste.");
+      return;
+    }
+    stopAudio();
+    audio = new Audio(url);
+    audio.play();
+    playing = true;
+    audio.onended = () => { playing = false; draw(); };
+    draw();
+  }
 
   // Chaque ligne = "Titre - Artiste" et éventuellement " | lien"
   function parse(text) {
@@ -309,14 +364,14 @@ function gameBlindTest(back) {
 
   function draw() {
     box.innerHTML = "";
-    box.append(backBar("Blind test", back));
+    box.append(backBar("Blind test", leave));
 
     if (phase === "setup") {
       box.append(
-        el("div", { class: "info mb-4", html: "🎧 L'app gère la liste, les révélations et les points ; <b>le son se lance depuis ton appli Spotify ou YouTube</b> (au haut-parleur). Colle un lien après un « | » pour un bouton ▶ direct." }),
+        el("div", { class: "info mb-4", html: "🎧 L'app joue un <b>extrait de 30 s</b> de chaque morceau (via Deezer, gratuit, sans compte) : <b>personne ne voit le titre</b>, même pas celui qui tient le téléphone ! Il faut du réseau pendant la partie." }),
         el("div", { class: "label" }, "Ta playlist (une ligne par morceau) 💾"),
-        el("textarea", { class: "field", rows: 8, value: tracksText, placeholder: "Titre - Artiste\nBella Ciao - La Casa de Papel | https://youtu.be/xxxx\n...", onInput: (e) => { tracksText = e.target.value; save("blindtest-text", tracksText); } }),
-        el("div", { class: "hint" }, "Format : Titre - Artiste, puis | lien (optionnel)."),
+        el("textarea", { class: "field", rows: 8, value: tracksText, placeholder: "Titre - Artiste\nBohemian Rhapsody - Queen\n...", onInput: (e) => { tracksText = e.target.value; save("blindtest-text", tracksText); } }),
+        el("div", { class: "hint" }, "Format : Titre - Artiste (un | lien reste possible en secours)."),
         el("div", { class: "mt-3" }, aiButton("✨ Proposer 15 tubes par IA (remplit la liste)", async () => {
           const theme = prompt("Thème de la playlist ? (ex : années 90, Disney, rap FR)") || "";
           const data = await aiGenerate('Propose 15 chansons très connues pour un blind test entre amis français' + (theme ? ', thème : "' + theme + '"' : "") + '. Uniquement des tubes reconnaissables. Réponds UNIQUEMENT par un tableau JSON : [{"title":"titre","artist":"artiste"}]');
@@ -328,27 +383,32 @@ function gameBlindTest(back) {
       );
     } else if (phase === "playing") {
       const t = tracks[order[idx]];
+      const q = encodeURIComponent(t.title + " " + t.artist);
       const content = el("div", { class: "center stack" }, el("div", { class: "hint" }, "Morceau " + (idx + 1) + "/" + order.length));
       if (!revealed) {
-        // Liens de lancement pour le DJ : recherche directe du morceau dans
-        // Spotify ou YouTube (l'appli s'ouvre si elle est installée).
-        // ⚠️ Le titre apparaît dans la recherche : réservé au DJ !
-        const q = encodeURIComponent(t.title + " " + t.artist);
+        // Bouton principal : jouer/rejouer l'extrait SANS RIEN AFFICHER
+        const playBtn = btn(playing ? "🔁 Rejouer l'extrait" : "▶ Jouer l'extrait (30 s)", () => playPreview(t, playBtn), "go");
         content.append(
-          el("div", { class: "bigcard", style: "background:var(--card);color:var(--amber);font-size:60px;padding:64px 16px" }, "🎵"),
-          el("div", { class: "muted" }, "Le DJ lance le son... qui trouve le titre ET l'artiste ?"),
-          t.link ? el("a", { class: "btn ghost", href: t.link, target: "_blank", rel: "noreferrer" }, "▶ Ouvrir le lien du morceau") : null,
-          el("div", { class: "rowbtns" },
-            el("a", { class: "btn ghost", href: "https://open.spotify.com/search/" + q, target: "_blank", rel: "noreferrer" }, "🟢 Spotify"),
-            el("a", { class: "btn ghost", href: "https://www.youtube.com/results?search_query=" + q, target: "_blank", rel: "noreferrer" }, "▶️ YouTube")
+          el("div", { class: "bigcard", style: "background:var(--card);color:var(--amber);font-size:60px;padding:64px 16px" }, playing ? "🔊" : "🎵"),
+          playBtn,
+          playing ? btn("⏸ Stop", () => { stopAudio(); draw(); }, "ghost") : null,
+          el("div", { class: "muted" }, "Qui trouve le titre ET l'artiste ?"),
+          // Secours si l'extrait est introuvable (spoil : réservé au DJ)
+          el("details", { class: "mt-2" },
+            el("summary", { class: "hint", style: "cursor:pointer" }, "Extrait introuvable ? Boutons de secours (DJ uniquement)"),
+            el("div", { class: "rowbtns mt-2" },
+              t.link ? el("a", { class: "btn ghost", href: t.link, target: "_blank", rel: "noreferrer" }, "▶ Lien") : null,
+              el("a", { class: "btn ghost", href: "https://open.spotify.com/search/" + q, target: "_blank", rel: "noreferrer" }, "🟢 Spotify"),
+              el("a", { class: "btn ghost", href: "https://www.youtube.com/results?search_query=" + q, target: "_blank", rel: "noreferrer" }, "▶️ YouTube")
+            )
           ),
-          el("div", { class: "hint" }, "⚠️ Boutons réservés au DJ : la recherche affiche le titre !"),
           btn("👁 Révéler la réponse", () => { revealed = true; draw(); }, "amber")
         );
       } else {
         content.append(
           el("div", { class: "reveal-good" }, el("div", { style: "font-size:28px;font-weight:900" }, t.title), t.artist ? el("div", { style: "font-size:18px;font-weight:700" }, t.artist) : null),
           btn(idx + 1 >= order.length ? "🎉 Terminer" : "Morceau suivant →", () => {
+            stopAudio();
             if (idx + 1 >= order.length) phase = "setup";
             else { idx += 1; revealed = false; }
             draw();
