@@ -1,7 +1,7 @@
 {
-  "name": "Apéro Games",
-  "short_name": "Apéro Games",
-  "description": "Jeux de société pour les vacances entre amis",
+  "name": "Holiday Games",
+  "short_name": "Holiday Games",
+  "description": "Petits jeux pour des vacances entre amis",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
