@@ -10,7 +10,7 @@
    jour sur les téléphones.
    ================================================================== */
 
-const CACHE = "apero-games-v6";
+const CACHE = "apero-games-v8";
 
 // La liste des fichiers à garder pour le hors-ligne (chemins relatifs)
 const ASSETS = [
