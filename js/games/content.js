@@ -330,12 +330,21 @@ function gameBlindTest(back) {
       const t = tracks[order[idx]];
       const content = el("div", { class: "center stack" }, el("div", { class: "hint" }, "Morceau " + (idx + 1) + "/" + order.length));
       if (!revealed) {
+        // Liens de lancement pour le DJ : recherche directe du morceau dans
+        // Spotify ou YouTube (l'appli s'ouvre si elle est installée).
+        // ⚠️ Le titre apparaît dans la recherche : réservé au DJ !
+        const q = encodeURIComponent(t.title + " " + t.artist);
         content.append(
           el("div", { class: "bigcard", style: "background:var(--card);color:var(--amber);font-size:60px;padding:64px 16px" }, "🎵"),
-          el("div", { class: "muted" }, "Lancez le son... qui trouve le titre ET l'artiste ?")
+          el("div", { class: "muted" }, "Le DJ lance le son... qui trouve le titre ET l'artiste ?"),
+          t.link ? el("a", { class: "btn ghost", href: t.link, target: "_blank", rel: "noreferrer" }, "▶ Ouvrir le lien du morceau") : null,
+          el("div", { class: "rowbtns" },
+            el("a", { class: "btn ghost", href: "https://open.spotify.com/search/" + q, target: "_blank", rel: "noreferrer" }, "🟢 Spotify"),
+            el("a", { class: "btn ghost", href: "https://www.youtube.com/results?search_query=" + q, target: "_blank", rel: "noreferrer" }, "▶️ YouTube")
+          ),
+          el("div", { class: "hint" }, "⚠️ Boutons réservés au DJ : la recherche affiche le titre !"),
+          btn("👁 Révéler la réponse", () => { revealed = true; draw(); }, "amber")
         );
-        if (t.link) content.append(el("a", { class: "btn ghost", href: t.link, target: "_blank", rel: "noreferrer" }, "▶ Ouvrir dans l'appli musique"));
-        content.append(btn("👁 Révéler la réponse", () => { revealed = true; draw(); }, "amber"));
       } else {
         content.append(
           el("div", { class: "reveal-good" }, el("div", { style: "font-size:28px;font-weight:900" }, t.title), t.artist ? el("div", { style: "font-size:18px;font-weight:700" }, t.artist) : null),
