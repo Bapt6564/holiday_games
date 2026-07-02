@@ -33,6 +33,9 @@ function el(tag, props = {}, ...children) {
     if (key === "class") node.className = val;
     else if (key === "text") node.textContent = val;
     else if (key === "html") node.innerHTML = val;
+    // ⚠️ "value" doit être affecté comme PROPRIÉTÉ (node.value), pas comme
+    // attribut : sinon les <textarea> restent vides à l'affichage !
+    else if (key === "value") node.value = val;
     else if (key.startsWith("on") && typeof val === "function")
       node.addEventListener(key.slice(2).toLowerCase(), val);
     else node.setAttribute(key, val);
