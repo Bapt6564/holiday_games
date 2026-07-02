@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!-- ==================================================================
+     Apéro Games — page principale
+     ------------------------------------------------------------------
+     Ce fichier est le SQUELETTE de l'application. Il ne contient presque
+     aucun texte visible : tout est construit par le JavaScript, dans la
+     balise <div id="app">.
+
+     À la fin, on charge les scripts DANS L'ORDRE (important !) :
+       1. storage.js  -> sauvegarde
+       2. data.js     -> le contenu (packs de quiz, missions, etc.)
+       3. ui.js       -> outils d'affichage réutilisés partout
+       4. les jeux    -> basics / party / content
+       5. main.js     -> le menu et le démarrage
+     ================================================================== -->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport : indispensable pour un bon affichage sur téléphone -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Apéro Games</title>
+
+    <!-- Feuille de style -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- ---- Réglages PWA (pour installer l'app sur le téléphone) ---- -->
+    <!-- Le manifest décrit l'app (nom, icône, couleurs) -->
+    <link rel="manifest" href="manifest.json" />
+    <!-- Couleur de la barre du téléphone -->
+    <meta name="theme-color" content="#1e1b4b" />
+    <!-- Icône quand on l'ajoute à l'écran d'accueil sur iPhone -->
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Apéro Games" />
+  </head>
+
+  <body>
+    <!-- C'est ICI que toute l'app s'affiche. Le JavaScript remplit ce div. -->
+    <div id="app"></div>
+
+    <!-- Les scripts, dans l'ordre de dépendance -->
+    <script src="js/storage.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/games/basics.js"></script>
+    <script src="js/games/party.js"></script>
+    <script src="js/games/content.js"></script>
+    <script src="js/games/amongus.js"></script>
+    <script src="js/games/loupgarou.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

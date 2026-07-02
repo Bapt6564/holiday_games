@@ -1,0 +1,182 @@
+/* ==================================================================
+   Apéro Games — style.css
+   ------------------------------------------------------------------
+   Toutes les couleurs et l'apparence sont ici. Les "variables" en haut
+   (--bg, --amber...) permettent de changer le thème d'un seul endroit.
+   ================================================================== */
+
+:root {
+  --bg: #1e1b4b;        /* fond de l'app (indigo très foncé) */
+  --card: #312e81;      /* fond des cartes / boutons secondaires */
+  --card2: #3730a3;     /* variante un peu plus claire */
+  --ghost: #4338ca;     /* boutons "neutres" */
+  --amber: #fcd34d;     /* accent principal (jaune/ambre) */
+  --rose: #f43f5e;      /* action forte (lancer, valider) */
+  --emerald: #10b981;   /* action "go" (démarrer, jouer) */
+  --text: #ffffff;      /* texte principal */
+  --muted: #a5b4fc;     /* texte discret (indications) */
+  --muted2: #818cf8;    /* texte encore plus discret */
+}
+
+/* Réglages de base */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* padding-bottom généreux + zone sûre pour les encoches d'iPhone */
+  padding: 16px 16px calc(40px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+
+/* Conteneur centré, largeur max façon téléphone */
+#app { max-width: 480px; margin: 0 auto; }
+
+/* ---------------- Titres et en-tête ---------------- */
+.home-header { text-align: center; padding: 28px 0; }
+.home-logo { font-size: 56px; }
+.home-title {
+  font-size: 34px; font-weight: 800; color: var(--amber);
+  margin: 6px 0 2px; letter-spacing: -0.5px;
+}
+.home-sub { color: var(--muted); margin: 0; }
+
+.backbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.backbtn {
+  width: 40px; height: 40px; border: none; border-radius: 999px;
+  background: var(--card2); color: var(--amber);
+  font-size: 20px; font-weight: 700; cursor: pointer;
+}
+.backbtn:active { transform: scale(0.9); }
+.title { font-size: 24px; font-weight: 800; color: var(--amber); margin: 0; }
+
+/* ---------------- Boutons ---------------- */
+.btn {
+  display: block; width: 100%; border: none; border-radius: 18px;
+  padding: 16px; font-size: 17px; font-weight: 700; color: var(--text);
+  background: var(--card); cursor: pointer; text-align: center;
+  transition: transform 0.08s ease; margin: 0; text-decoration: none;
+}
+.btn:active { transform: scale(0.96); }
+.btn.primary { background: var(--rose); }
+.btn.go { background: var(--emerald); }
+.btn.ghost { background: var(--ghost); }
+.btn.soft { background: var(--card); color: var(--muted); }
+.btn.disabled { background: var(--card); color: var(--muted2); }
+.btn.amber { background: var(--amber); color: var(--bg); }
+
+/* petit espace entre boutons empilés */
+.stack > * + * { margin-top: 12px; }
+.rowbtns { display: flex; gap: 12px; }
+.rowbtns > * { flex: 1; }
+
+/* ---------------- Cartes, champs ---------------- */
+.card { background: var(--card); border-radius: 18px; padding: 14px; }
+.card.center { text-align: center; }
+.info {
+  background: var(--card); border-radius: 18px; padding: 16px;
+  color: var(--muted); font-size: 14px; line-height: 1.5;
+}
+.info b { color: var(--text); }
+
+.label { color: var(--muted); font-weight: 600; margin: 0 0 6px; }
+.small { font-size: 13px; }
+.muted { color: var(--muted); }
+.hint { color: var(--muted2); font-size: 12px; margin-top: 4px; }
+
+input.field, textarea.field {
+  width: 100%; border: none; border-radius: 14px; padding: 12px;
+  background: var(--card); color: var(--text); font-size: 15px;
+  font-family: inherit; outline: none; resize: vertical;
+}
+input.field::placeholder, textarea.field::placeholder { color: var(--muted2); }
+
+/* ---------------- Menu d'accueil ---------------- */
+.tile {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  background: var(--card); border: none; border-radius: 18px; padding: 16px;
+  cursor: pointer; text-align: left; transition: transform 0.08s ease;
+}
+.tile:active { transform: scale(0.96); }
+.tile .emoji { font-size: 34px; }
+.tile .name { display: block; font-size: 19px; font-weight: 700; color: var(--text); }
+.tile .desc { display: block; font-size: 13px; color: var(--muted); }
+
+/* ---------------- Dés ---------------- */
+.row { display: flex; gap: 12px; margin-bottom: 16px; }
+.row > * { flex: 1; }
+.stepper { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.round {
+  width: 38px; height: 38px; border: none; border-radius: 999px;
+  background: var(--ghost); color: var(--text); font-size: 20px; font-weight: 700; cursor: pointer;
+}
+.big { font-size: 24px; font-weight: 800; min-width: 32px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip {
+  border: none; border-radius: 999px; padding: 6px 12px; font-size: 14px;
+  font-weight: 700; background: var(--ghost); color: var(--muted); cursor: pointer;
+}
+.chip.on { background: var(--amber); color: var(--bg); }
+.dice-area {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+  align-items: center; min-height: 120px; margin-bottom: 16px;
+}
+.die {
+  width: 78px; height: 78px; border-radius: 18px; background: var(--amber);
+  color: var(--bg); display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 900;
+}
+.total { font-size: 18px; margin-bottom: 16px; }
+.total b { color: var(--amber); font-size: 24px; }
+
+/* ---------------- Timer ---------------- */
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.presets .chip { padding: 16px 0; font-size: 17px; border-radius: 16px; }
+.timer-display { font-size: 84px; font-weight: 900; text-align: center; margin: 32px 0; color: var(--amber); }
+.timer-display.warn { color: var(--rose); }
+
+/* ---------------- Cartes de jeu (mot, dilemme...) ---------------- */
+.bigcard {
+  background: var(--amber); color: var(--bg); border-radius: 24px;
+  padding: 40px 16px; font-size: 34px; font-weight: 900; text-align: center;
+  word-break: break-word;
+}
+.reveal-good { background: var(--emerald); color: var(--bg); border-radius: 20px; padding: 20px; font-weight: 900; text-align: center; }
+.center { text-align: center; }
+.pt-6 { padding-top: 24px; }
+.pt-8 { padding-top: 32px; }
+.big-emoji { font-size: 60px; text-align: center; }
+.pulse { animation: pulse 0.7s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* ---------------- Quiz ---------------- */
+.answer { text-align: left; }
+.answer.correct { background: var(--emerald); }
+.answer.wrong { background: var(--rose); }
+.answer.dim { background: var(--card); color: var(--muted2); }
+.fun { background: var(--amber); color: var(--bg); border-radius: 16px; padding: 12px; font-size: 14px; font-weight: 600; }
+.q-text { background: var(--card); border-radius: 18px; padding: 16px; font-size: 20px; font-weight: 700; }
+
+/* ---------------- Listes (packs, joueurs) ---------------- */
+.line { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.line .field { flex: 1; }
+.iconbtn { width: 44px; height: 44px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.iconbtn.del { background: var(--rose); color: #fff; }
+.iconbtn.exp { background: var(--card2); color: var(--amber); }
+.link { background: none; border: none; color: var(--amber); font-weight: 600; cursor: pointer; font-size: 15px; padding: 0; }
+
+/* ---------------- Photo mystère ---------------- */
+.photo-frame { border-radius: 24px; overflow: hidden; background: var(--card); }
+.photo-frame img { width: 100%; max-height: 380px; object-fit: contain; transition: filter 0.7s ease; transform: scale(1.1); }
+.thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 12px; }
+
+/* ---------------- Killer ---------------- */
+.mission { background: var(--rose); color: #fff; border-radius: 24px; padding: 28px 16px; text-align: center; }
+.mission .lbl { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #ffe4e6; }
+.mission .val { font-size: 26px; font-weight: 900; }
+.mission .val.small { font-size: 20px; }
+
+/* Utilitaires d'espacement */
+.mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
